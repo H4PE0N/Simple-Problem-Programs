@@ -1,29 +1,130 @@
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <time.h>
+#include "sudoku-board-solver.h"
 
 /* THIS PROGRAM IS A SUDOKU SOLVER - MADE BY H4PE0N */
 
-int* create_integer_array(int length)
+int main(int aAmount, char* arguments[])
 {
-	int* array = malloc(sizeof(int) * length);
-	for(int index = 0; index < length; index = index + 1)
+	srand(time(NULL));
+
+	char filename[] = "sudoku-board-example.txt";
+
+	int** sudoku = create_integer_matrix(9, 9);
+
+	if(!extract_sudoku_board(sudoku, filename))
 	{
-		*(array + index) = 0;
+		free(sudoku);
+		return true;
 	}
-	return array;
+
+	display_sudoku_board(sudoku); printf("\n");
+
+	if(solve_sudoku_board(sudoku))
+	{
+		printf("Solved!\n");
+		display_sudoku_board(sudoku);
+	}
+	else
+	{
+		printf("Not Solved!\n");
+	}
+
+	free(sudoku);
+	return false;
 }
 
-int** create_integer_matrix(int height, int width)
+bool solve_sudoku_board(int** sudoku)
 {
-	int** matrix = malloc(sizeof(int*) * height);
-	for(int index = 0; index < height; index = index + 1)
+	if(!sudoku_board_valid(sudoku))
 	{
-		*(matrix + index) = create_integer_array(width);
+		return false;
 	}
-	return matrix;
+	int height, width;
+
+	if(!empty_sudoku_diget(&height, &width, sudoku))
+	{
+		return true;
+	}
+
+	for(int diget = 1; diget <= 9; diget = diget + 1)
+	{
+		*(*(sudoku + height) + width) = diget;
+		if(solve_sudoku_board(sudoku))
+		{
+			return true;
+		}
+	}
+	*(*(sudoku + height) + width) = 0;
+	return false;
+}
+
+bool extract_sudoku_board(int** sudoku, char filename[])
+{
+	FILE* fPointer = fopen(filename, "r");
+
+	if(fPointer == NULL)
+	{
+		return false;
+	}
+	char buffer[200];
+	for(int hIndex = 0; hIndex < 9; hIndex = hIndex + 1)
+	{
+		if(fgets(buffer, 200, fPointer) == NULL)
+		{
+			return false;
+		}
+		for(int wIndex = 0; wIndex < 9; wIndex = wIndex + 1)
+		{
+			int height = hIndex, width = (wIndex * 2);
+			int diget = atoi(buffer + width);
+			*(*(sudoku + hIndex) + wIndex) = diget;
+		}
+	}
+	fclose(fPointer);
+
+	return true;
+}
+
+bool empty_sudoku_diget(int* height, int* width, int** sudoku)
+{
+	for(int hIndex = 0; hIndex < 9; hIndex = hIndex + 1)
+	{
+		for(int wIndex = 0; wIndex < 9; wIndex = wIndex + 1)
+		{
+			if(*(*(sudoku + hIndex) + wIndex) == 0)
+			{
+				*height = hIndex, *width = wIndex;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool sudoku_board_valid(int** sudoku)
+{
+	for(int index = 0; index < 9; index = index + 1)
+	{
+		if(!sudoku_horizon_valid(sudoku, index))
+		{
+			return false;
+		}
+		if(!sudoku_vertic_valid(sudoku, index))
+		{
+			return false;
+		}
+	}
+	for(int hIndex = 0; hIndex < 9; hIndex = hIndex + 3)
+	{
+		for(int wIndex = 0; wIndex < 9; wIndex = wIndex + 3)
+		{
+			if(!sudoku_square_valid(sudoku, hIndex, wIndex))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 bool sudoku_horizon_valid(int** sudoku, int height)
@@ -70,7 +171,7 @@ bool sudoku_square_valid(int** sudoku, int height, int width)
 		for(int wIndex = sWidth; wIndex < (sWidth + 3); wIndex = wIndex + 1)
 		{
 			int current = *(*(sudoku + hIndex) + wIndex);
-			if(current != 0 && *(digets + current) == 1) // IF THE DIGET ALREADY EXISTS
+			if(current != 0 && *(digets + current) == 1)
 			{
 				free(digets);
 				return false;
@@ -80,79 +181,6 @@ bool sudoku_square_valid(int** sudoku, int height, int width)
 	}
 	free(digets);
 	return true;
-}
-
-bool sudoku_board_valid(int** sudoku)
-{
-	for(int index = 0; index < 9; index = index + 1)
-	{
-		if(!sudoku_horizon_valid(sudoku, index))
-		{
-			return false;
-		}
-		if(!sudoku_vertic_valid(sudoku, index))
-		{
-			return false;
-		}
-	}
-	for(int hIndex = 0; hIndex < 9; hIndex = hIndex + 3)
-	{
-		for(int wIndex = 0; wIndex < 9; wIndex = wIndex + 3)
-		{
-			if(!sudoku_square_valid(sudoku, hIndex, wIndex))
-			{
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
-bool empty_sudoku_diget(int* height, int* width, int** sudoku)
-{
-	for(int hIndex = 0; hIndex < 9; hIndex = hIndex + 1)
-	{
-		for(int wIndex = 0; wIndex < 9; wIndex = wIndex + 1)
-		{
-			if(*(*(sudoku + hIndex) + wIndex) == 0)
-			{
-				*height = hIndex, *width = wIndex;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-bool solve_sudoku_board(int** sudoku)
-{
-	if(!sudoku_board_valid(sudoku))
-	{
-		return false;
-	}
-	int height, width;
-
-	if(!empty_sudoku_diget(&height, &width, sudoku))
-	{
-		return true;
-	}
-
-	for(int diget = 1; diget <= 9; diget = diget + 1)
-	{
-		*(*(sudoku + height) + width) = diget;
-		if(solve_sudoku_board(sudoku))
-		{
-			return true;
-		}
-	}
-	*(*(sudoku + height) + width) = 0;
-	return false; 
-}
-
-int** create_random_sudoku(int solved)
-{
-	int** sudoku = create_integer_matrix(9, 9);
-	return sudoku;
 }
 
 void display_sudoku_board(int** sudoku)
@@ -167,22 +195,22 @@ void display_sudoku_board(int** sudoku)
 	}
 }
 
-
-
-int main(int aAmount, char* arguments[])
+int* create_integer_array(int length)
 {
-	srand(time(NULL));
-
-	int** sudoku = create_random_sudoku(0);
-
-	display_sudoku_board(sudoku); printf("\n");
-
-	if(solve_sudoku_board(sudoku))
+	int* array = malloc(sizeof(int) * length);
+	for(int index = 0; index < length; index = index + 1)
 	{
-		display_sudoku_board(sudoku);
+		*(array + index) = 0;
 	}
+	return array;
+}
 
-	free(sudoku);
-
-	return false;
+int** create_integer_matrix(int height, int width)
+{
+	int** matrix = malloc(sizeof(int*) * height);
+	for(int index = 0; index < height; index = index + 1)
+	{
+		*(matrix + index) = create_integer_array(width);
+	}
+	return matrix;
 }
