@@ -8,29 +8,22 @@ int main(int aAmount, char* arguments[])
 	srand(time(NULL));
 
 	char filename[] = "sudoku-board-example.txt";
-
 	int** sudoku = create_integer_matrix(9, 9);
 
 	if(!extract_sudoku_board(sudoku, filename))
 	{
-		free(sudoku);
-		return true;
+		free(sudoku); return true;
 	}
 
 	display_sudoku_board(sudoku); printf("\n");
 
-	if(solve_sudoku_board(sudoku))
-	{
-		printf("Solved!\n");
-		display_sudoku_board(sudoku);
-	}
-	else
+	if(!solve_sudoku_board(sudoku))
 	{
 		printf("Not Solved!\n");
 	}
+	display_sudoku_board(sudoku);
 
-	free(sudoku);
-	return false;
+	free(sudoku); return false;
 }
 
 bool solve_sudoku_board(int** sudoku)
